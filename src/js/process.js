@@ -1,9 +1,9 @@
 //获取音乐时间
 (function ($, root) {
-    var durationAll, //总时间
-        reqTimer, //requestAnimationFrame的标识
+    var curDuration, //总时间
+        frameId, //requestAnimationFrame的标识
         lastPercent = 0, //记录上一次结束的时间
-        firstTime; //记录开始的时间
+        startTime; //记录开始的时间
 
     //处理时间 处理成04:12这种
     function dealTime(timer) {
@@ -24,7 +24,7 @@
     //执行更新时间和滚动条变化的函数
     function update(precent) {
         //因为每首歌曲的时间不同,需要通过上面precent算出的百分比来计算出当前时间的位置，获取新的时间
-        var timer = precent * durationAll;
+        var timer = precent * curDuration;
         timer = dealTime(timer) //接收dealTime函数处理的值 如 04:13
         $('.wrapper').find('.cur-time').html(timer) //将数据插入到结构中
         var moveWidht = (precent - 1) * 100 + '%' //通过算法计算出移动所占的百分比
@@ -35,7 +35,7 @@
     //获取时间
     function getTime(time) {
         lastPercent = 0; //为了使进行切换 lastPercent置为0
-        durationAll = time; //将总时间暴露到外部
+        curDuration = time; //将总时间暴露到外部
         var data = dealTime(time) //接收dealTime函数处理的值 如 04:13
         $('.wrapper').find('.all-time').html(data)
     }
@@ -45,16 +45,16 @@
         //判断data是否有值 有值的话就用 没有就用lastPercent 然后赋值给lastPercent
         // lastPercent = data ? data : lastPercent;
         lastPercent = data === undefined ? lastPercent : data;
-        cancelAnimationFrame(frame);
-        firstTime = new Date().getTime(); //获取开始时间
+        cancelAnimationFrame(frameId);
+        startTime = new Date().getTime(); //获取开始时间
         function frame() {
             var curTime = new Date().getTime(); //获取当前的时间
-            var precent = lastPercent + (curTime - firstTime) / (durationAll * 1000) //通过计算，将数转换成毫秒
+            var precent = lastPercent + (curTime - startTime) / (curDuration * 1000) //通过计算，将数转换成毫秒
             if (precent < 1) {
-                reqTimer = requestAnimationFrame(frame) //执行定时器
+                frameId = requestAnimationFrame(frame) //执行定时器
                 update(precent) //执行更新时间和滚动条变化的函数
             } else {
-                cancelAnimationFrame(frame); //如果不在歌曲就不播放 然后跳到下一首
+                cancelAnimationFrame(frameId); //如果不在歌曲就不播放 然后跳到下一首
                 $('.wrapper').find(".next-btn").trigger("click");
             }
         }
@@ -64,8 +64,8 @@
     function stop() {
         var stopTimer = new Date().getTime();
         //每次点击暂停,记录上一次停止的位置,然后在赋给本身
-        lastPercent = lastPercent + (stopTimer - firstTime) / (durationAll * 1000);
-        cancelAnimationFrame(reqTimer);
+        lastPercent = lastPercent + (stopTimer - startTime) / (curDuration * 1000);
+        cancelAnimationFrame(frameId);
     }
 
     //对外暴露接口
@@ -77,6 +77,8 @@
     }
 
 })(window.Zepto, window.player || (window.player = {}))
+
+
 
 
 
